@@ -47,9 +47,14 @@ SRC="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" 2>/dev/null && pwd || echo "")"
 if [ -z "$SRC" ] || [ ! -f "$SRC/cyphertool.py" ]; then
   echo "⬇ Cypher Tool indiriliyor: $REPO_URL"
   SRC="$(mktemp -d)"; git clone --depth 1 "$REPO_URL" "$SRC/ct" >/dev/null 2>&1 || { echo "İndirilemedi: $REPO_URL"; exit 1; }; SRC="$SRC/ct"
-  # repoda sadece zip varsa onu aç
-  if [ ! -f "$SRC/cyphertool.py" ] && [ -f "$SRC/cyphertool.zip" ]; then
-    python3 -m zipfile -e "$SRC/cyphertool.zip" "$SRC/_z" && SRC="$(dirname "$(find "$SRC/_z" -name cyphertool.py | head -n1)")"
+  # repoda sadece zip varsa onu aç (sürüm numaralı zip varsa en yenisi: cyphertool-1.1.0.zip > cyphertool.zip)
+  if [ ! -f "$SRC/cyphertool.py" ]; then
+    Z="$(ls "$SRC"/cyphertool-*.zip 2>/dev/null | sort -V | tail -n1)"
+    [ -z "$Z" ] && [ -f "$SRC/cyphertool.zip" ] && Z="$SRC/cyphertool.zip"
+    if [ -n "$Z" ]; then
+      echo "📦 Arşivden kuruluyor: $(basename "$Z")"
+      python3 -m zipfile -e "$Z" "$SRC/_z" && SRC="$(dirname "$(find "$SRC/_z" -name cyphertool.py | head -n1)")"
+    fi
   fi
 fi
 
@@ -116,7 +121,7 @@ case ":$PATH:" in *":$BIN:"*) ;; *)
   echo -e "${Y}Yeni bir terminal aç (PATH güncellendi).${R}";;
 esac
 
-echo -e "${G}${B}✔ Cypher Tool kuruldu!${R}"
+echo -e "${G}${B}✔ Cypher Tool kuruldu! ($(grep -m1 '^VERSION' "$APP_HOME/cyphertool.py" | cut -d'"' -f2) sürümü)${R}"
 echo "  • Aç:              Menüden/masaüstünden 'Cypher Tool'  ya da  cyphertool"
 echo "  • Terminalden kur: ct https://github.com/sahip/proje"
 echo "  • Toplu kur:       ct link1 link2 link3"
